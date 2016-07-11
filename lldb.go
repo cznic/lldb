@@ -7,6 +7,11 @@
 // intersection of models listed in [1]. As a settled term is lacking, it'll be
 // called here a 'Virtual memory model' (VMM).
 //
+// Changelog
+//
+// 2016-07-11: First standalone release v1.0.0 of the package previously
+// published as experimental (github.com/cznic/exp/lldb).
+//
 // Filers
 //
 // A Filer is an abstraction of storage. A Filer may be a part of some process'
