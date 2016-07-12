@@ -9,6 +9,8 @@
 //
 // Changelog
 //
+// 2016-07-12: v1.0.1 adds a license for testdata/fortunes.txt.
+//
 // 2016-07-11: First standalone release v1.0.0 of the package previously
 // published as experimental (github.com/cznic/exp/lldb).
 //
