@@ -15,13 +15,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/cznic/bufs"
+	"github.com/cznic/internal/buffer"
 	"github.com/cznic/mathutil"
 	"github.com/cznic/zappy"
 )
 
 const (
-	maxBuf = maxRq + 20 // bufs,Buffers.Alloc
+	maxBuf = maxRq + 20
 )
 
 // Options are passed to the NewAllocator to amend some configuration.  The
@@ -413,8 +413,9 @@ func (a *Allocator) cfree(h int64) {
 // Passing handles not obtained initially from Alloc or not anymore valid to
 // any other Allocator methods can result in an irreparably corrupted database.
 func (a *Allocator) Alloc(b []byte) (handle int64, err error) {
-	buf := bufs.GCache.Get(zappy.MaxEncodedLen(len(b)))
-	defer bufs.GCache.Put(buf)
+	pbuf := buffer.Get(zappy.MaxEncodedLen(len(b)))
+	defer buffer.Put(pbuf)
+	buf := *pbuf
 	buf, _, cc, err := a.makeUsedBlock(buf, b)
 	if err != nil {
 		return
@@ -632,8 +633,7 @@ func (a *Allocator) unlink(h, atoms, p, n int64) (err error) {
 // Return len(slice) == n, reuse src if possible.
 func need(n int, src []byte) []byte {
 	if cap(src) < n {
-		bufs.GCache.Put(src)
-		return bufs.GCache.Get(n)
+		return *buffer.Get(n)
 	}
 
 	return src[:n]
@@ -683,8 +683,9 @@ func (a *Allocator) Get(buf []byte, handle int64) (b []byte, err error) {
 		}
 	}(handle)
 
-	first := bufs.GCache.Get(16)
-	defer bufs.GCache.Put(first)
+	pfirst := buffer.Get(16)
+	defer buffer.Put(pfirst)
+	first := *pfirst
 	relocated := false
 	relocSrc := handle
 reloc:
@@ -714,8 +715,9 @@ reloc:
 				return zappy.Decode(buf, first[1:dlen+1])
 			}
 		default:
-			cc := bufs.GCache.Get(1)
-			defer bufs.GCache.Put(cc)
+			pcc := buffer.Get(1)
+			defer buffer.Put(pcc)
+			cc := *pcc
 			dlen := int(tag)
 			atoms := n2atoms(dlen)
 			tailOff := off + 16*int64(atoms) - 1
@@ -734,8 +736,9 @@ reloc:
 				}
 				return
 			case tagCompressed:
-				zbuf := bufs.GCache.Get(dlen)
-				defer bufs.GCache.Put(zbuf)
+				pzbuf := buffer.Get(dlen)
+				defer buffer.Put(pzbuf)
+				zbuf := *pzbuf
 				off += 1
 				if err = a.read(zbuf, off); err != nil {
 					return buf[:0], err
@@ -747,8 +750,9 @@ reloc:
 	case 0:
 		return buf[:0], nil
 	case tagUsedLong:
-		cc := bufs.GCache.Get(1)
-		defer bufs.GCache.Put(cc)
+		pcc := buffer.Get(1)
+		defer buffer.Put(pcc)
+		cc := *pcc
 		dlen := m2n(int(first[1])<<8 | int(first[2]))
 		atoms := n2atoms(dlen)
 		tailOff := off + 16*int64(atoms) - 1
@@ -767,8 +771,9 @@ reloc:
 			}
 			return
 		case tagCompressed:
-			zbuf := bufs.GCache.Get(dlen)
-			defer bufs.GCache.Put(zbuf)
+			pzbuf := buffer.Get(dlen)
+			defer buffer.Put(pzbuf)
+			zbuf := *pzbuf
 			off += 3
 			if err = a.read(zbuf, off); err != nil {
 				return buf[:0], err
@@ -819,10 +824,12 @@ func (a *Allocator) Realloc(handle int64, b []byte) (err error) {
 func (a *Allocator) realloc(handle int64, b []byte) (err error) {
 	var dlen, needAtoms0 int
 
-	b8 := bufs.GCache.Get(8)
-	defer bufs.GCache.Put(b8)
-	dst := bufs.GCache.Get(zappy.MaxEncodedLen(len(b)))
-	defer bufs.GCache.Put(dst)
+	pb8 := buffer.Get(8)
+	defer buffer.Put(pb8)
+	b8 := *pb8
+	pdst := buffer.Get(zappy.MaxEncodedLen(len(b)))
+	defer buffer.Put(pdst)
+	dst := *pdst
 	b, needAtoms0, cc, err := a.makeUsedBlock(dst, b)
 	if err != nil {
 		return
@@ -922,8 +929,9 @@ retry:
 		return err
 	}
 
-	rb := bufs.GCache.Cget(16)
-	defer bufs.GCache.Put(rb)
+	prb := buffer.CGet(16)
+	defer buffer.Put(prb)
+	rb := *prb
 	rb[0] = tagUsedRelocated
 	h2b(rb[1:], newH)
 	if err = a.writeAt(rb[:], h2off(handle)); err != nil {
@@ -950,8 +958,9 @@ func (a *Allocator) write(off int64, b ...[]byte) (err error) {
 	for _, part := range b {
 		rq += len(part)
 	}
-	buf := bufs.GCache.Get(rq)
-	defer bufs.GCache.Put(buf)
+	pbuf := buffer.Get(rq)
+	defer buffer.Put(pbuf)
+	buf := *pbuf
 	buf = buf[:0]
 	for _, part := range b {
 		buf = append(buf, part...)
@@ -987,8 +996,9 @@ func (a *Allocator) nfo(h int64) (tag byte, s, p, n int64, err error) {
 		}
 	}
 
-	buf := bufs.GCache.Get(22)
-	defer bufs.GCache.Put(buf)
+	pbuf := buffer.Get(22)
+	defer buffer.Put(pbuf)
+	buf := *pbuf
 	if err = a.read(buf[:rq], off); err != nil {
 		return
 	}
@@ -1020,8 +1030,9 @@ func (a *Allocator) leftNfo(h int64) (tag byte, s, p, n int64, err error) {
 		return
 	}
 
-	buf := bufs.GCache.Get(8)
-	defer bufs.GCache.Put(buf)
+	pbuf := buffer.Get(8)
+	defer buffer.Put(pbuf)
+	buf := *pbuf
 	off := h2off(h)
 	if err = a.read(buf[:], off-8); err != nil {
 		return
@@ -1038,8 +1049,9 @@ func (a *Allocator) leftNfo(h int64) (tag byte, s, p, n int64, err error) {
 
 // Set h.prev = p
 func (a *Allocator) prev(h, p int64) (err error) {
-	b := bufs.GCache.Get(7)
-	defer bufs.GCache.Put(b)
+	pb := buffer.Get(7)
+	defer buffer.Put(pb)
+	b := *pb
 	off := h2off(h)
 	if err = a.read(b[:1], off); err != nil {
 		return
@@ -1058,8 +1070,9 @@ func (a *Allocator) prev(h, p int64) (err error) {
 
 // Set h.next = n
 func (a *Allocator) next(h, n int64) (err error) {
-	b := bufs.GCache.Get(7)
-	defer bufs.GCache.Put(b)
+	pb := buffer.Get(7)
+	defer buffer.Put(pb)
+	b := *pb
 	off := h2off(h)
 	if err = a.read(b[:1], off); err != nil {
 		return
@@ -1078,8 +1091,9 @@ func (a *Allocator) next(h, n int64) (err error) {
 
 // Make the filer image @h a free block.
 func (a *Allocator) makeFree(h, atoms, prev, next int64) (err error) {
-	buf := bufs.GCache.Get(22)
-	defer bufs.GCache.Put(buf)
+	pbuf := buffer.Get(22)
+	defer buffer.Put(pbuf)
+	buf := *pbuf
 	switch {
 	case atoms == 1:
 		buf[0], buf[15] = tagFreeShort, tagFreeShort
@@ -1142,8 +1156,9 @@ func (a *Allocator) makeUsedBlock(dst []byte, b []byte) (w []byte, rqAtoms int, 
 func (a *Allocator) writeUsedBlock(h int64, cc byte, b []byte) (err error) {
 	n := len(b)
 	rq := n2atoms(n) << 4
-	buf := bufs.GCache.Get(rq)
-	defer bufs.GCache.Put(buf)
+	pbuf := buffer.Get(rq)
+	defer buffer.Put(pbuf)
+	buf := *pbuf
 	switch n <= maxShort {
 	case true:
 		buf[0] = byte(n)
@@ -1706,8 +1721,9 @@ func (f *flt) init() {
 }
 
 func (f *flt) load(fi Filer, off int64) (err error) {
-	b := bufs.GCache.Get(fltSz)
-	defer bufs.GCache.Put(b)
+	pb := buffer.Get(fltSz)
+	defer buffer.Put(pb)
+	b := *pb
 	if _, err = fi.ReadAt(b[:], off); err != nil {
 		return
 	}
@@ -1764,8 +1780,9 @@ func (f *flt) setHead(h, atoms int64, fi Filer) (err error) {
 	case atoms < 1:
 		panic(atoms)
 	case atoms >= maxFLTRq:
-		b := bufs.GCache.Get(7)
-		defer bufs.GCache.Put(b)
+		pb := buffer.Get(7)
+		defer buffer.Put(pb)
+		b := *pb
 		if _, err = fi.WriteAt(h2b(b[:], h), 8*13+1); err != nil {
 			return
 		}
@@ -1777,8 +1794,9 @@ func (f *flt) setHead(h, atoms int64, fi Filer) (err error) {
 		g := f[lg:]
 		for i := range f {
 			if atoms < g[i+1].minSize {
-				b := bufs.GCache.Get(7)
-				defer bufs.GCache.Put(b)
+				pb := buffer.Get(7)
+				defer buffer.Put(pb)
+				b := *pb
 				if _, err = fi.WriteAt(h2b(b[:], h), 8*int64(i+lg)+1); err != nil {
 					return
 				}

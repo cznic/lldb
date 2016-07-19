@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cznic/bufs"
+	"github.com/cznic/internal/buffer"
 	"github.com/cznic/sortutil"
 	"github.com/cznic/zappy"
 )
@@ -748,8 +748,9 @@ func TestAllocatorMakeUsedBlock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dst := bufs.GCache.Get(zappy.MaxEncodedLen(maxRq + 1))
-	defer bufs.GCache.Put(dst)
+	pdst := buffer.Get(zappy.MaxEncodedLen(maxRq + 1))
+	defer buffer.Put(pdst)
+	dst := *pdst
 	if _, _, _, err := a.makeUsedBlock(dst, make([]byte, maxRq)); err != nil {
 		t.Fatal(err)
 	}

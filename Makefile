@@ -27,7 +27,7 @@ edit:
 
 editor:
 	gofmt -l -s -w *.go
-	go test
+	go test 2>&1 | tee log
 	go build
 
 internalError:

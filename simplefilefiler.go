@@ -9,11 +9,10 @@ package lldb
 import (
 	"os"
 
-	"github.com/cznic/fileutil"
-	"github.com/cznic/mathutil"
+	"github.com/cznic/internal/file"
 )
 
-var _ Filer = &SimpleFileFiler{} // Ensure SimpleFileFiler is a Filer.
+var _ Filer = &SimpleFileFiler{}
 
 // SimpleFileFiler is an os.File backed Filer intended for use where structural
 // consistency can be reached by other means (SimpleFileFiler is for example
@@ -27,14 +26,20 @@ var _ Filer = &SimpleFileFiler{} // Ensure SimpleFileFiler is a Filer.
 // when, for example, a power outage occurs or the updating process terminates
 // abruptly.
 type SimpleFileFiler struct {
-	file *os.File
+	fi   file.Interface
+	name string
 	nest int
-	size int64 // not set if < 0
 }
 
 // NewSimpleFileFiler returns a new SimpleFileFiler.
 func NewSimpleFileFiler(f *os.File) *SimpleFileFiler {
-	return &SimpleFileFiler{file: f, size: -1}
+	fi, err := file.Open(f)
+	if err != nil {
+		return nil
+	}
+
+	sf := &SimpleFileFiler{fi: fi, name: f.Name()}
+	return sf
 }
 
 // BeginUpdate implements Filer.
@@ -49,7 +54,7 @@ func (f *SimpleFileFiler) Close() (err error) {
 		return &ErrPERM{(f.Name() + ":Close")}
 	}
 
-	return f.file.Close()
+	return f.fi.Close()
 }
 
 // EndUpdate implements Filer.
@@ -63,61 +68,32 @@ func (f *SimpleFileFiler) EndUpdate() (err error) {
 }
 
 // Name implements Filer.
-func (f *SimpleFileFiler) Name() string {
-	return f.file.Name()
-}
+func (f *SimpleFileFiler) Name() string { return f.name }
 
 // PunchHole implements Filer.
-func (f *SimpleFileFiler) PunchHole(off, size int64) (err error) {
-	return fileutil.PunchHole(f.file, off, size)
-}
+func (f *SimpleFileFiler) PunchHole(off, size int64) (err error) { return nil }
 
 // ReadAt implements Filer.
-func (f *SimpleFileFiler) ReadAt(b []byte, off int64) (n int, err error) {
-	return f.file.ReadAt(b, off)
-}
+func (f *SimpleFileFiler) ReadAt(b []byte, off int64) (n int, err error) { return f.fi.ReadAt(b, off) }
 
 // Rollback implements Filer.
-func (f *SimpleFileFiler) Rollback() (err error) { return }
+func (f *SimpleFileFiler) Rollback() (err error) { return nil }
 
 // Size implements Filer.
 func (f *SimpleFileFiler) Size() (int64, error) {
-	if f.size < 0 { // boot
-		fi, err := os.Stat(f.file.Name())
-		if err != nil {
-			return 0, err
-		}
-
-		f.size = fi.Size()
+	info, err := f.fi.Stat()
+	if err != nil {
+		return 0, err
 	}
-	return f.size, nil
+
+	return info.Size(), nil
 }
 
 // Sync implements Filer.
-func (f *SimpleFileFiler) Sync() error {
-	return f.file.Sync()
-}
+func (f *SimpleFileFiler) Sync() error { return f.fi.Sync() }
 
 // Truncate implements Filer.
-func (f *SimpleFileFiler) Truncate(size int64) (err error) {
-	if size < 0 {
-		return &ErrINVAL{"Truncate size", size}
-	}
-
-	f.size = size
-	return f.file.Truncate(size)
-}
+func (f *SimpleFileFiler) Truncate(size int64) (err error) { return f.fi.Truncate(size) }
 
 // WriteAt implements Filer.
-func (f *SimpleFileFiler) WriteAt(b []byte, off int64) (n int, err error) {
-	if f.size < 0 { // boot
-		fi, err := os.Stat(f.file.Name())
-		if err != nil {
-			return 0, err
-		}
-
-		f.size = fi.Size()
-	}
-	f.size = mathutil.MaxInt64(f.size, int64(len(b))+off)
-	return f.file.WriteAt(b, off)
-}
+func (f *SimpleFileFiler) WriteAt(b []byte, off int64) (n int, err error) { return f.fi.WriteAt(b, off) }

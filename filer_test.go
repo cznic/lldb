@@ -338,11 +338,6 @@ func testFilerReadAtWriteAt(t *testing.T, nf newFunc) {
 		}
 
 		if g, e := b[from:to], e[from:to]; !bytes.Equal(g, e) {
-			if x, ok := f.(*MemFiler); ok {
-				for i := int64(0); i <= 3; i++ {
-					t.Logf("pg %d\n----\n%s", i, hex.Dump(x.m[i][:]))
-				}
-			}
 			t.Errorf(
 				"i %d from %d to %d len(g) %d len(e) %d\n---- got ----\n%s\n---- exp ----\n%s",
 				i, from, to, len(g), len(e), hex.Dump(g), hex.Dump(e),

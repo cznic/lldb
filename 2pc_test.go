@@ -211,6 +211,11 @@ func TestACIDFiler0(t *testing.T) {
 	}
 
 	tr, err = OpenBTree(a, nil, 1)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
 	for k, v := range ref {
 		binary.BigEndian.PutUint64(key[:], uint64(k))
 		binary.BigEndian.PutUint64(val[:], uint64(v))
@@ -222,18 +227,20 @@ func TestACIDFiler0(t *testing.T) {
 		}
 	}
 
-	okImage, err := ioutil.ReadFile(dbName)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
 	// Phase 3: Simulate a crash
 	sz, err := filer.Size()
 	if err != nil {
 		t.Error(err)
 		return
 	}
+
+	okImage, err := ioutil.ReadFile(dbName)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	okImage = okImage[:sz]
 
 	sz /= 2
 	if err := db.Truncate(sz); err != nil {
@@ -275,6 +282,11 @@ func TestACIDFiler0(t *testing.T) {
 	newImage, err := ioutil.ReadFile(dbName)
 	if err != nil {
 		t.Error(err)
+		return
+	}
+
+	if g, e := len(newImage), len(okImage); g != e {
+		t.Errorf("%#x %#x", g, e)
 		return
 	}
 
