@@ -28,9 +28,9 @@ type acidWriter0 ACIDFiler0
 
 func (a *acidWriter0) WriteAt(b []byte, off int64) (n int, err error) {
 	f := (*ACIDFiler0)(a)
-	if f.bwal == nil { // new epoch
+	if f.newEpoch {
+		f.newEpoch = false
 		f.data = f.data[:0]
-		f.bwal = bufio.NewWriter(f.wal)
 		if err = a.writePacket([]interface{}{wpt00Header, walTypeACIDFiler0, ""}); err != nil {
 			return
 		}
@@ -96,12 +96,13 @@ const (
 //  [1]: http://godoc.org/github.com/cznic/exp/dbm
 type ACIDFiler0 struct {
 	*RollbackFiler
-	wal               *os.File
 	bwal              *bufio.Writer
 	data              []acidWrite
-	testHook          bool  // keeps WAL untruncated (once)
-	peakWal           int64 // tracks WAL maximum used size
+	newEpoch          bool
 	peakBitFilerPages int   // track maximum transaction memory
+	peakWal           int64 // tracks WAL maximum used size
+	testHook          bool  // keeps WAL untruncated (once)
+	wal               *os.File
 }
 
 // NewACIDFiler0 returns a  newly created ACIDFiler0 with WAL in wal.
@@ -128,6 +129,8 @@ func NewACIDFiler(db Filer, wal *os.File) (r *ACIDFiler0, err error) {
 		}
 	}
 
+	r.bwal = bufio.NewWriter(r.wal)
+	r.newEpoch = true
 	acidWriter := (*acidWriter0)(r)
 
 	if r.RollbackFiler, err = NewRollbackFiler(
@@ -142,17 +145,12 @@ func NewACIDFiler(db Filer, wal *os.File) (r *ACIDFiler0, err error) {
 				return
 			}
 
-			r.bwal = nil
-
 			if err = r.wal.Sync(); err != nil {
 				return
 			}
 
 			wfi, err := r.wal.Stat()
-			switch err != nil {
-			case true:
-				// unexpected, but ignored
-			case false:
+			if err == nil {
 				r.peakWal = mathutil.MaxInt64(wfi.Size(), r.peakWal)
 			}
 
@@ -185,6 +183,8 @@ func NewACIDFiler(db Filer, wal *os.File) (r *ACIDFiler0, err error) {
 			}
 
 			r.testHook = false
+			r.bwal.Reset(r.wal)
+			r.newEpoch = true
 			return r.wal.Sync()
 
 		},

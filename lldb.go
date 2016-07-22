@@ -9,6 +9,8 @@
 //
 // Changelog
 //
+// 2016-07-22: v1.0.3 brings some small performance improvements.
+//
 // 2016-07-12: v1.0.2 now uses packages from cznic/internal.
 //
 // 2016-07-12: v1.0.1 adds a license for testdata/fortunes.txt.

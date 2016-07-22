@@ -23,7 +23,7 @@ cpu: clean
 	go tool pprof -lines *.test cpu.out
 
 edit:
-	gvim -p Makefile *.go
+	@2>/dev/null gvim -p Makefile *.go
 
 editor:
 	gofmt -l -s -w *.go

@@ -56,6 +56,7 @@ import (
 	"sync"
 
 	"github.com/cznic/fileutil"
+	"github.com/cznic/internal/buffer"
 	"github.com/cznic/mathutil"
 )
 
@@ -72,7 +73,6 @@ const (
 
 var (
 	bitmask       = [8]byte{1, 2, 4, 8, 16, 32, 64, 128}
-	bitZeroPage   bitPage
 	allDirtyFlags [bfSize >> 3]byte
 )
 
@@ -85,7 +85,8 @@ func init() {
 type (
 	bitPage struct {
 		prev, next *bitPage
-		data       [bfSize]byte
+		pdata      *[]byte
+		data       []byte
 		flags      [bfSize >> 3]byte
 		dirty      bool
 	}
@@ -118,6 +119,12 @@ func (f *bitFiler) Close() (err error)   { return }
 func (f *bitFiler) Name() string         { return fmt.Sprintf("%p.bitfiler", f) }
 func (f *bitFiler) Size() (int64, error) { return f.size, nil }
 
+func (f *bitFiler) free() {
+	for _, pg := range f.m {
+		buffer.Put(pg.pdata)
+	}
+}
+
 func (f *bitFiler) PunchHole(off, size int64) (err error) {
 	first := off >> bfBits
 	if off&bfMask != 0 {
@@ -134,6 +141,8 @@ func (f *bitFiler) PunchHole(off, size int64) (err error) {
 	f.Lock()
 	for pgI := first; pgI <= last; pgI++ {
 		pg := &bitPage{}
+		pg.pdata = buffer.CGet(bfSize)
+		pg.data = *pg.pdata
 		pg.flags = allDirtyFlags
 		f.m[pgI] = pg
 	}
@@ -155,8 +164,10 @@ func (f *bitFiler) ReadAt(b []byte, off int64) (n int, err error) {
 		pg := f.m[pgI]
 		if pg == nil {
 			pg = &bitPage{}
+			pg.pdata = buffer.CGet(bfSize)
+			pg.data = *pg.pdata
 			if f.parent != nil {
-				_, err = f.parent.ReadAt(pg.data[:], off&^bfMask)
+				_, err = f.parent.ReadAt(pg.data, off&^bfMask)
 				if err != nil && !fileutil.IsEOF(err) {
 					f.Unlock()
 					return
@@ -199,6 +210,9 @@ func (f *bitFiler) Truncate(size int64) (err error) {
 		last++
 	}
 	for ; first < last; first++ {
+		if bp, ok := f.m[first]; ok {
+			buffer.Put(bp.pdata)
+		}
 		delete(f.m, first)
 	}
 
@@ -218,8 +232,10 @@ func (f *bitFiler) WriteAt(b []byte, off int64) (n int, err error) {
 		pg := f.m[pgI]
 		if pg == nil {
 			pg = &bitPage{}
+			pg.pdata = buffer.CGet(bfSize)
+			pg.data = *pg.pdata
 			if f.parent != nil {
-				_, err = f.parent.ReadAt(pg.data[:], off&^bfMask)
+				_, err = f.parent.ReadAt(pg.data, off&^bfMask)
 				if err != nil && !fileutil.IsEOF(err) {
 					f.Unlock()
 					return
@@ -479,6 +495,11 @@ func (r *RollbackFiler) Close() (err error) {
 		err = &ErrPERM{r.f.Name() + ": Close inside an open transaction"}
 	}
 
+	if r.bitFiler != nil {
+		r.bitFiler.free()
+		r.bitFiler = nil
+	}
+
 	return
 }
 
@@ -510,6 +531,7 @@ func (r *RollbackFiler) EndUpdate() (err error) {
 
 	switch {
 	case r.tlevel == 0:
+		r.bitFiler.free()
 		r.bitFiler = nil
 		if nwr == 0 {
 			return
@@ -517,6 +539,7 @@ func (r *RollbackFiler) EndUpdate() (err error) {
 
 		return r.checkpoint(sz)
 	default:
+		r.bitFiler.free()
 		r.bitFiler = parent.(*bitFiler)
 		sz, _ := bf.Size() // bitFiler.Size() never returns err != nil
 		return parent.Truncate(sz)
@@ -576,6 +599,7 @@ func (r *RollbackFiler) Rollback() (err error) {
 	}
 
 	if r.tlevel > 1 {
+		r.bitFiler.free()
 		r.bitFiler = r.bitFiler.parent.(*bitFiler)
 	}
 	r.tlevel--
