@@ -97,7 +97,6 @@ type (
 		parent Filer
 		m      bitFilerMap
 		size   int64
-		sync.Mutex
 	}
 )
 
@@ -138,7 +137,6 @@ func (f *bitFiler) PunchHole(off, size int64) (err error) {
 	if limit := f.size >> bfBits; last > limit {
 		last = limit
 	}
-	f.Lock()
 	for pgI := first; pgI <= last; pgI++ {
 		pg := &bitPage{}
 		pg.pdata = buffer.CGet(bfSize)
@@ -146,7 +144,6 @@ func (f *bitFiler) PunchHole(off, size int64) (err error) {
 		pg.flags = allDirtyFlags
 		f.m[pgI] = pg
 	}
-	f.Unlock()
 	return
 }
 
@@ -160,7 +157,6 @@ func (f *bitFiler) ReadAt(b []byte, off int64) (n int, err error) {
 		err = io.EOF
 	}
 	for rem != 0 && avail > 0 {
-		f.Lock()
 		pg := f.m[pgI]
 		if pg == nil {
 			pg = &bitPage{}
@@ -169,7 +165,6 @@ func (f *bitFiler) ReadAt(b []byte, off int64) (n int, err error) {
 			if f.parent != nil {
 				_, err = f.parent.ReadAt(pg.data, off&^bfMask)
 				if err != nil && !fileutil.IsEOF(err) {
-					f.Unlock()
 					return
 				}
 
@@ -177,7 +172,6 @@ func (f *bitFiler) ReadAt(b []byte, off int64) (n int, err error) {
 			}
 			f.m[pgI] = pg
 		}
-		f.Unlock()
 		nc := copy(b[:mathutil.Min(rem, bfSize)], pg.data[pgO:])
 		pgI++
 		pgO = 0
@@ -190,8 +184,6 @@ func (f *bitFiler) ReadAt(b []byte, off int64) (n int, err error) {
 }
 
 func (f *bitFiler) Truncate(size int64) (err error) {
-	f.Lock()
-	defer f.Unlock()
 	switch {
 	case size < 0:
 		return &ErrINVAL{"Truncate size", size}
@@ -228,7 +220,6 @@ func (f *bitFiler) WriteAt(b []byte, off int64) (n int, err error) {
 	rem := n
 	var nc int
 	for rem != 0 {
-		f.Lock()
 		pg := f.m[pgI]
 		if pg == nil {
 			pg = &bitPage{}
@@ -237,7 +228,6 @@ func (f *bitFiler) WriteAt(b []byte, off int64) (n int, err error) {
 			if f.parent != nil {
 				_, err = f.parent.ReadAt(pg.data, off&^bfMask)
 				if err != nil && !fileutil.IsEOF(err) {
-					f.Unlock()
 					return
 				}
 
@@ -245,7 +235,6 @@ func (f *bitFiler) WriteAt(b []byte, off int64) (n int, err error) {
 			}
 			f.m[pgI] = pg
 		}
-		f.Unlock()
 		nc = copy(pg.data[pgO:], b)
 		pgI++
 		pg.dirty = true
@@ -273,8 +262,6 @@ func (f *bitFiler) link() {
 }
 
 func (f *bitFiler) dumpDirty(w io.WriterAt) (nwr int, err error) {
-	f.Lock()
-	defer f.Unlock()
 	f.link()
 	for pgI, pg := range f.m {
 		if !pg.dirty {
