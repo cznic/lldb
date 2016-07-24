@@ -66,28 +66,16 @@ var (
 )
 
 const (
-	bfBits = 9
+	bfBits = 12
 	bfSize = 1 << bfBits
 	bfMask = bfSize - 1
 )
-
-var (
-	bitmask       = [8]byte{1, 2, 4, 8, 16, 32, 64, 128}
-	allDirtyFlags [bfSize >> 3]byte
-)
-
-func init() {
-	for i := range allDirtyFlags {
-		allDirtyFlags[i] = 0xff
-	}
-}
 
 type (
 	bitPage struct {
 		prev, next *bitPage
 		pdata      *[]byte
 		data       []byte
-		flags      [bfSize >> 3]byte
 		dirty      bool
 	}
 
@@ -141,7 +129,7 @@ func (f *bitFiler) PunchHole(off, size int64) (err error) {
 		pg := &bitPage{}
 		pg.pdata = buffer.CGet(bfSize)
 		pg.data = *pg.pdata
-		pg.flags = allDirtyFlags
+		pg.dirty = true
 		f.m[pgI] = pg
 	}
 	return
@@ -238,9 +226,6 @@ func (f *bitFiler) WriteAt(b []byte, off int64) (n int, err error) {
 		nc = copy(pg.data[pgO:], b)
 		pgI++
 		pg.dirty = true
-		for i := pgO; i < pgO+nc; i++ {
-			pg.flags[i>>3] |= bitmask[i&7]
-		}
 		pgO = 0
 		rem -= nc
 		b = b[nc:]
@@ -274,36 +259,11 @@ func (f *bitFiler) dumpDirty(w io.WriterAt) (nwr int, err error) {
 		}
 
 		for pg != nil && pg.dirty {
-			last := false
-			var off int64
-			first := -1
-			for i := 0; i < bfSize; i++ {
-				flag := pg.flags[i>>3]&bitmask[i&7] != 0
-				switch {
-				case flag && !last: // Leading edge detected
-					off = pgI<<bfBits + int64(i)
-					first = i
-				case !flag && last: // Trailing edge detected
-					n, err := w.WriteAt(pg.data[first:i], off)
-					if n != i-first {
-						return 0, err
-					}
-					first = -1
-					nwr++
-				}
-
-				last = flag
-			}
-			if first >= 0 {
-				i := bfSize
-				n, err := w.WriteAt(pg.data[first:i], off)
-				if n != i-first {
-					return 0, err
-				}
-
-				nwr++
+			if _, err := w.WriteAt(pg.data, pgI<<bfBits); err != nil {
+				return 0, err
 			}
 
+			nwr++
 			pg.dirty = false
 			pg = pg.next
 			pgI++
