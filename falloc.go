@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"sort"
 	"strings"
 	"sync"
@@ -429,6 +430,7 @@ func (a *Allocator) Alloc(b []byte) (handle int64, err error) {
 
 func (a *Allocator) alloc(b []byte, cc byte) (h int64, err error) {
 	rqAtoms := n2atoms(len(b))
+	log.Printf("alloc %d atoms", rqAtoms)
 	if h = a.flt.find(rqAtoms); h == 0 { // must grow
 		var sz int64
 		if sz, err = a.f.Size(); err != nil {
@@ -437,6 +439,7 @@ func (a *Allocator) alloc(b []byte, cc byte) (h int64, err error) {
 
 		h = off2h(sz)
 		err = a.writeUsedBlock(h, cc, b)
+		log.Printf("grow %d atoms", h+int64(rqAtoms))
 		return
 	}
 
@@ -466,6 +469,7 @@ func (a *Allocator) alloc(b []byte, cc byte) (h int64, err error) {
 	}
 
 	if s > int64(rqAtoms) {
+		log.Printf("split %d atoms", s)
 		freeH := h + int64(rqAtoms)
 		freeAtoms := s - int64(rqAtoms)
 		if err = a.link(freeH, freeAtoms); err != nil {
@@ -518,6 +522,7 @@ func (a *Allocator) free(h, from int64, acceptRelocs bool) (err error) {
 }
 
 func (a *Allocator) free2(h, atoms int64) (err error) {
+	log.Printf("free %d atoms", atoms)
 	sz, err := a.f.Size()
 	if err != nil {
 		return
@@ -550,6 +555,7 @@ func (a *Allocator) free2(h, atoms int64) (err error) {
 	case latoms == 0 && ratoms == 0:
 		// -> isolated <-
 		if isTail { // cut tail
+			log.Printf("shrink %d atoms", h)
 			return a.f.Truncate(h2off(h))
 		}
 
@@ -560,6 +566,7 @@ func (a *Allocator) free2(h, atoms int64) (err error) {
 			return
 		}
 
+		log.Printf("coalesce %d+%d atoms", atoms, ratoms)
 		return a.link(h, atoms+ratoms)
 	case latoms != 0 && ratoms == 0:
 		// <- left join
@@ -568,9 +575,11 @@ func (a *Allocator) free2(h, atoms int64) (err error) {
 		}
 
 		if isTail {
+			log.Printf("shrink %d atoms", h-latoms)
 			return a.f.Truncate(h2off(h - latoms))
 		}
 
+		log.Printf("coalesce %d+%d atoms", latoms, atoms)
 		return a.link(h-latoms, latoms+atoms)
 	}
 
@@ -590,6 +599,7 @@ func (a *Allocator) free2(h, atoms int64) (err error) {
 		return
 	}
 
+	log.Printf("coalesce %d+%d+%d atoms", latoms, atoms, ratoms)
 	return a.link(h-latoms, latoms+atoms+ratoms)
 }
 
@@ -857,6 +867,7 @@ func (a *Allocator) realloc(handle int64, b []byte) (err error) {
 	}
 
 	atoms := int64(n2atoms(dlen))
+	log.Printf("realloc %d %d atoms", atoms, needAtoms)
 retry:
 	switch {
 	case needAtoms < atoms:
@@ -872,6 +883,7 @@ retry:
 		}
 
 		if h2off(fh)+16*fa == sz {
+			log.Printf("shrink %d atoms", fh)
 			return a.f.Truncate(h2off(fh))
 		}
 
