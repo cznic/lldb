@@ -478,8 +478,11 @@ func (r *RollbackFiler) EndUpdate() (err error) {
 
 	switch {
 	case r.tlevel == 0:
-		r.bitFiler.free()
-		r.bitFiler = nil
+		defer func() {
+			r.bitFiler.free()
+			r.bitFiler = nil
+		}()
+
 		if nwr == 0 {
 			return
 		}
