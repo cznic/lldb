@@ -287,16 +287,16 @@ Note: No Allocator method returns io.EOF.
 type Allocator struct {
 	f        Filer
 	flt      flt
-	Compress bool // enables content compression
 	cache    cache
 	m        map[int64]*node
 	lru      lst
+	mu       sync.Mutex
 	expHit   int64
 	expMiss  int64
 	cacheSz  int
 	hit      uint16
 	miss     uint16
-	mu       sync.Mutex
+	Compress bool // enables content compression
 }
 
 // NewAllocator returns a new Allocator. To open an existing file, pass its
