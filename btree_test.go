@@ -42,9 +42,9 @@ func verifyPageLinks(a btreeStore, tree btree, n int) (err error) {
 			return fmt.Errorf("first() should returned nil page")
 		}
 
-		ph2, p2, err := tree.last(a)
-		if err != nil {
-			return err
+		ph2, p2, e := tree.last(a)
+		if e != nil {
+			return e
 		}
 
 		if ph2 != 0 || p2 != nil {
@@ -66,8 +66,8 @@ func verifyPageLinks(a btreeStore, tree btree, n int) (err error) {
 		}
 
 		for i := 0; i < p.len(); i++ {
-			key, err := p.key(a, i)
-			if err != nil {
+			var key []byte
+			if key, err = p.key(a, i); err != nil {
 				return err
 			}
 
@@ -1298,7 +1298,7 @@ func benchmarkBTreeSetFiler(b *testing.B, f Filer, sz int) {
 			return
 		}
 
-		if err := tr.Set(k[:], v); err != nil {
+		if err = tr.Set(k[:], v); err != nil {
 			f.EndUpdate()
 			b.Error(err)
 			return
@@ -1729,7 +1729,7 @@ func TestBTreeSeekFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.Set(n2b(100), n2b(1000)); err != nil {
+	if err = db.Set(n2b(100), n2b(1000)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1737,8 +1737,8 @@ func TestBTreeSeekFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	k, v, err := en.Next()
-	if err != nil {
+	var k, v []byte
+	if k, v, err = en.Next(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1750,7 +1750,7 @@ func TestBTreeSeekFirst(t *testing.T) {
 		t.Fatal(g, e)
 	}
 
-	if err := db.Set(n2b(110), n2b(1100)); err != nil {
+	if err = db.Set(n2b(110), n2b(1100)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1770,7 +1770,7 @@ func TestBTreeSeekFirst(t *testing.T) {
 		t.Fatal(g, e)
 	}
 
-	if err := db.Set(n2b(90), n2b(900)); err != nil {
+	if err = db.Set(n2b(90), n2b(900)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1799,7 +1799,7 @@ func TestBTreeSeekLast(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.Set(n2b(100), n2b(1000)); err != nil {
+	if err = db.Set(n2b(100), n2b(1000)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1807,8 +1807,8 @@ func TestBTreeSeekLast(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	k, v, err := en.Next()
-	if err != nil {
+	var k, v []byte
+	if k, v, err = en.Next(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1820,7 +1820,7 @@ func TestBTreeSeekLast(t *testing.T) {
 		t.Fatal(g, e)
 	}
 
-	if err := db.Set(n2b(90), n2b(900)); err != nil {
+	if err = db.Set(n2b(90), n2b(900)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1840,7 +1840,7 @@ func TestBTreeSeekLast(t *testing.T) {
 		t.Fatal(g, e)
 	}
 
-	if err := db.Set(n2b(110), n2b(1100)); err != nil {
+	if err = db.Set(n2b(110), n2b(1100)); err != nil {
 		t.Fatal(err)
 	}
 

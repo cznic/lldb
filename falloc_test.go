@@ -83,12 +83,11 @@ func (a *pAllocator) err() error {
 }
 
 func (a *pAllocator) preMortem(s string) {
-	var e error
 	if e := a.lastKnownGood.Truncate(0); e != nil {
 		panic(e)
 	}
 	b := mfBytes(a.Allocator.f)
-	if _, e = a.lastKnownGood.WriteAt(b, 0); e != nil {
+	if _, e := a.lastKnownGood.WriteAt(b, 0); e != nil {
 		return
 	}
 	a.lastKnownGoodFLT = a.flt
@@ -829,14 +828,15 @@ func TestAllocatorRnd(t *testing.T) {
 					b[j] = byte(rng.Int())
 				}
 				if rq > 300 {
-					for i := 100; i < 200; i++ {
-						b[i] = 'A' // give compression a chance
+					for n := 100; n < 200; n++ {
+						b[n] = 'A' // give compression a chance
 					}
 				}
 
 				balance += n2atoms(len(b))
-				h, err := a.Alloc(b)
-				if err != nil || bad() {
+
+				var h int64
+				if h, err = a.Alloc(b); err != nil || bad() {
 					dump(a, t)
 					t.Fatalf(
 						"A) N %d, kind %d, pass %d, i:%d, len(b):%d(%#x), err %v",
@@ -917,7 +917,7 @@ func TestAllocatorRnd(t *testing.T) {
 				}
 				a0, a1 := n2atoms(len0), n2atoms(len(wb))
 				balance = balance - a0 + a1
-				if err := a.Realloc(h, wb); err != nil || bad() {
+				if err = a.Realloc(h, wb); err != nil || bad() {
 					dump(a, t)
 					t.Fatalf(
 						"D) h:%#x, len(b):%#4x, len(wb): %#x, err %v",
@@ -947,8 +947,8 @@ func TestAllocatorRnd(t *testing.T) {
 		}
 
 		if cc == 0 {
-			sz, err := f.Size()
-			if err != nil {
+			var sz int64
+			if sz, err = f.Size(); err != nil {
 				t.Fatal(err)
 			}
 
@@ -995,7 +995,7 @@ func TestRollbackAllocator(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := r.BeginUpdate(); err != nil { // BeginUpdate 0->1
+	if err = r.BeginUpdate(); err != nil { // BeginUpdate 0->1
 		t.Fatal(err)
 	}
 
@@ -1040,7 +1040,7 @@ func TestRollbackAllocator(t *testing.T) {
 	}
 
 	// | 1 | free | 3 |
-	if err := r.BeginUpdate(); err != nil { // BeginUpdate 1->2
+	if err = r.BeginUpdate(); err != nil { // BeginUpdate 1->2
 		t.Fatal(err)
 	}
 
@@ -1054,7 +1054,7 @@ func TestRollbackAllocator(t *testing.T) {
 	}
 
 	// | 1 | 2 | 3 |
-	if err := r.Rollback(); err != nil { // Rollback 2->1
+	if err = r.Rollback(); err != nil { // Rollback 2->1
 		t.Fatal(err)
 	}
 
@@ -1100,7 +1100,8 @@ func benchmarkAllocatorAlloc(b *testing.B, f Filer, sz int) {
 			return
 		}
 
-		if h, err := a.Alloc(v); h <= 0 || err != nil {
+		var h int64
+		if h, err = a.Alloc(v); h <= 0 || err != nil {
 			f.EndUpdate()
 			b.Error(h, err)
 			return
@@ -1279,8 +1280,8 @@ func benchmarkAllocatorRndFree(b *testing.B, f Filer, sz int) {
 			return
 		}
 
-		h, err := a.Alloc(v)
-		if h <= 0 || err != nil {
+		var h int64
+		if h, err = a.Alloc(v); h <= 0 || err != nil {
 			f.EndUpdate()
 			b.Error(h, err)
 			return
@@ -1480,8 +1481,8 @@ func benchmarkAllocatorRndGet(b *testing.B, f Filer, sz int) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		h, err := a.Alloc(v)
-		if h <= 0 || err != nil {
+		var h int64
+		if h, err = a.Alloc(v); h <= 0 || err != nil {
 			f.EndUpdate()
 			b.Error(h, err)
 			return

@@ -638,7 +638,7 @@ retry:
 	}
 
 	if e.enum.index == e.enum.p.len() && e.enum.serial == e.enum.t.serial {
-		if err := e.enum.next(); err != nil {
+		if err = e.enum.next(); err != nil {
 			e.err = err
 			return nil, nil, e.err
 		}
@@ -1479,8 +1479,9 @@ func (p btreeDataPage) split(a btreeStore, root, ph, parent int64, parentIndex, 
 	} else {
 		nr := newBTreeIndexPage(ph)
 		nr = nr.insert3(0, rh, rh)
-		nrh, err := a.Alloc(nr)
-		if err != nil {
+
+		var nrh int64
+		if nrh, err = a.Alloc(nr); err != nil {
 			return nil, err
 		}
 
@@ -2074,8 +2075,9 @@ func (root btree) extract(a btreeStore, dst []byte, c func(a, b []byte) int, key
 		if ok {
 			if btreePage(p).isIndex() {
 				dph := btreeIndexPage(p).dataPage(index)
-				dp, err := a.Get(dst, dph)
-				if err != nil {
+
+				var dp []byte
+				if dp, err = a.Get(dst, dph); err != nil {
 					return nil, err
 				}
 
@@ -2088,7 +2090,6 @@ func (root btree) extract(a btreeStore, dst []byte, c func(a, b []byte) int, key
 				}
 
 				if btreeIndexPage(p).len() < kIndex && ph != iroot {
-					var err error
 					if p, err = btreeIndexPage(p).underflow(a, int64(root), iroot, parent, &ph, parentIndex, &index); err != nil {
 						return nil, err
 					}

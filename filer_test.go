@@ -185,7 +185,7 @@ func testFilerTruncate(t *testing.T, nf newFunc) {
 	}
 
 	sz *= 2
-	if err := f.Truncate(sz); err != nil {
+	if err = f.Truncate(sz); err != nil {
 		t.Error(err)
 		return
 	}
@@ -202,7 +202,7 @@ func testFilerTruncate(t *testing.T, nf newFunc) {
 	}
 
 	sz = 0
-	if err := f.Truncate(sz); err != nil {
+	if err = f.Truncate(sz); err != nil {
 		t.Error(err)
 		return
 	}
@@ -293,8 +293,8 @@ func testFilerReadAtWriteAt(t *testing.T, nf newFunc) {
 			return
 		}
 
-		if g, e := n, to-from; g != e {
-			t.Error(g, e)
+		if g, j := n, to-from; g != j {
+			t.Error(g, j)
 			return
 		}
 	}
@@ -332,15 +332,15 @@ func testFilerReadAtWriteAt(t *testing.T, nf newFunc) {
 			return
 		}
 
-		if g, e := n, to-from; g != e {
-			t.Error(g, e)
+		if g, j := n, to-from; g != j {
+			t.Error(g, j)
 			return
 		}
 
-		if g, e := b[from:to], e[from:to]; !bytes.Equal(g, e) {
+		if g, j := b[from:to], e[from:to]; !bytes.Equal(g, j) {
 			t.Errorf(
 				"i %d from %d to %d len(g) %d len(e) %d\n---- got ----\n%s\n---- exp ----\n%s",
-				i, from, to, len(g), len(e), hex.Dump(g), hex.Dump(e),
+				i, from, to, len(g), len(j), hex.Dump(g), hex.Dump(j),
 			)
 			return
 		}
@@ -357,8 +357,8 @@ func testFilerReadAtWriteAt(t *testing.T, nf newFunc) {
 		return
 	}
 
-	if g, e := buf.Bytes(), e[:n2]; !bytes.Equal(g, e) {
-		t.Errorf("\nlen %d\n%s\nlen %d\n%s", len(g), hex.Dump(g), len(e), hex.Dump(e))
+	if g, j := buf.Bytes(), e[:n2]; !bytes.Equal(g, j) {
+		t.Errorf("\nlen %d\n%s\nlen %d\n%s", len(g), hex.Dump(g), len(j), hex.Dump(j))
 		return
 	}
 
@@ -378,8 +378,8 @@ func testFilerReadAtWriteAt(t *testing.T, nf newFunc) {
 		return
 	}
 
-	if g, e := roundTrip, e[:n2]; !bytes.Equal(g, e) {
-		t.Errorf("\nlen %d\n%s\nlen %d\n%s", len(g), hex.Dump(g), len(e), hex.Dump(e))
+	if g, j := roundTrip, e[:n2]; !bytes.Equal(g, j) {
+		t.Errorf("\nlen %d\n%s\nlen %d\n%s", len(g), hex.Dump(g), len(j), hex.Dump(j))
 		return
 	}
 }

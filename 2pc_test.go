@@ -149,8 +149,8 @@ func TestACIDFiler0(t *testing.T) {
 	ref := map[int64]int64{}
 
 	for {
-		sz, err := acidFiler.Size()
-		if err != nil {
+		var sz int64
+		if sz, err = acidFiler.Size(); err != nil {
 			t.Error(err)
 			return
 		}
@@ -163,7 +163,7 @@ func TestACIDFiler0(t *testing.T) {
 		ref[k] = v
 		binary.BigEndian.PutUint64(key[:], uint64(k))
 		binary.BigEndian.PutUint64(val[:], uint64(v))
-		if err := tr.Set(key[:], val[:]); err != nil {
+		if err = tr.Set(key[:], val[:]); err != nil {
 			t.Error(err)
 			return
 		}
@@ -171,17 +171,17 @@ func TestACIDFiler0(t *testing.T) {
 
 	acidFiler.testHook = true // keep WAL
 
-	if err := acidFiler.EndUpdate(); err != nil {
+	if err = acidFiler.EndUpdate(); err != nil {
 		t.Error(err)
 		return
 	}
 
-	if err := acidFiler.Close(); err != nil {
+	if err = acidFiler.Close(); err != nil {
 		t.Error(err)
 		return
 	}
 
-	if err := wal.Sync(); err != nil {
+	if err = wal.Sync(); err != nil {
 		t.Error(err)
 		return
 	}
@@ -243,19 +243,19 @@ func TestACIDFiler0(t *testing.T) {
 	okImage = okImage[:sz]
 
 	sz /= 2
-	if err := db.Truncate(sz); err != nil {
+	if err = db.Truncate(sz); err != nil {
 		t.Error(err)
 		return
 	}
 
 	z := make([]byte, sz/3)
-	n, err := db.WriteAt(z, sz/3)
-	if n != len(z) {
+	var n int
+	if n, err = db.WriteAt(z, sz/3); n != len(z) {
 		t.Error(n, err)
 		return
 	}
 
-	if err := db.Sync(); err != nil {
+	if err = db.Sync(); err != nil {
 		t.Error(err)
 		return
 	}
