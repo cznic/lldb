@@ -32,7 +32,7 @@ func caller(s string, va ...interface{}) {
 	_, fn, fl, _ = runtime.Caller(1)
 	fmt.Fprintf(os.Stderr, "\tcallee: %s:%d: ", path.Base(fn), fl)
 	fmt.Fprintln(os.Stderr)
-	os.Stderr.Sync()
+	_ = os.Stderr.Sync()
 }
 
 func dbg(s string, va ...interface{}) {
@@ -43,7 +43,7 @@ func dbg(s string, va ...interface{}) {
 	fmt.Fprintf(os.Stderr, "dbg %s:%d: ", path.Base(fn), fl)
 	fmt.Fprintf(os.Stderr, s, va...)
 	fmt.Fprintln(os.Stderr)
-	os.Stderr.Sync()
+	_ = os.Stderr.Sync()
 }
 
 func TODO(...interface{}) string {

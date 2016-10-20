@@ -106,7 +106,7 @@ func testFilerNesting(t *testing.T, nf newFunc) {
 	f = nf()
 	t.Log(f.Name())
 	if err := f.EndUpdate(); err == nil {
-		f.Close()
+		_ = f.Close()
 		t.Fatal("unexpected success")
 	}
 
@@ -117,7 +117,9 @@ func testFilerNesting(t *testing.T, nf newFunc) {
 	// Check {Create, BeginUpdate, Close} doesn't work.
 	f = nf()
 	t.Log(f.Name())
-	f.BeginUpdate()
+	if err := f.BeginUpdate(); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := f.Close(); err == nil {
 		t.Fatal("unexpected success")
@@ -126,9 +128,11 @@ func testFilerNesting(t *testing.T, nf newFunc) {
 	// Check {Create, BeginUpdate, EndUpdate, Close} works.
 	f = nf()
 	t.Log(f.Name())
-	f.BeginUpdate()
+	if err := f.BeginUpdate(); err != nil {
+		t.Fatal(err)
+	}
 	if err := f.EndUpdate(); err != nil {
-		f.Close()
+		_ = f.Close()
 		t.Fatal(err)
 	}
 
@@ -723,7 +727,9 @@ func BenchmarkMemFilerWrRand(b *testing.B) {
 	for i, v := range ofs {
 		n := runs[i]
 		bytes += int64(n)
-		f.WriteAt(data[:n], int64(v))
+		if _, err := f.WriteAt(data[:n], int64(v)); err != nil {
+			b.Fatal(err)
+		}
 	}
 	b.StopTimer()
 }
@@ -747,13 +753,17 @@ func BenchmarkMemFilerRdRand(b *testing.B) {
 	for i, v := range ofs {
 		n := runs[i]
 		bytes += int64(n)
-		f.WriteAt(data[:n], int64(v))
+		if _, err := f.WriteAt(data[:n], int64(v)); err != nil {
+			b.Fatal(err)
+		}
 	}
 
 	runtime.GC()
 	b.StartTimer()
 	for _, v := range ofs {
-		f.ReadAt(data, int64(v))
+		if _, err := f.ReadAt(data, int64(v)); err != nil {
+			b.Fatal(err)
+		}
 	}
 	b.StopTimer()
 }

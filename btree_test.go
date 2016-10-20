@@ -370,7 +370,9 @@ func benchmarkBTreePut(b *testing.B, v []byte) {
 	runtime.GC()
 	b.StartTimer()
 	for _, k := range ka {
-		tree.put(nil, a, bytes.Compare, k[:], v, true)
+		if _, err = tree.put(nil, a, bytes.Compare, k[:], v, true); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
@@ -408,13 +410,17 @@ func benchmarkBTreeGet(b *testing.B, v []byte) {
 	}
 
 	for _, k := range ka {
-		tree.put(nil, a, bytes.Compare, k[:], v, true)
+		if _, err = tree.put(nil, a, bytes.Compare, k[:], v, true); err != nil {
+			b.Fatal(err)
+		}
 	}
 	buf := make([]byte, len(v))
 	runtime.GC()
 	b.StartTimer()
 	for _, k := range ka {
-		tree.get(a, buf, bytes.Compare, k[:])
+		if _, err = tree.get(a, buf, bytes.Compare, k[:]); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
@@ -445,7 +451,9 @@ func TestbTreeSeek(t *testing.T) {
 
 	// Fill
 	for i := int64(1); i <= N; i++ {
-		tree.Set(enc8(10*i), enc8(10*i+1))
+		if err := tree.Set(enc8(10*i), enc8(10*i+1)); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Check
@@ -651,7 +659,9 @@ func TestbTreeNext(t *testing.T) {
 
 	// Fill
 	for i := int64(1); i <= N; i++ {
-		tree.Set(enc8(10*i), enc8(10*i+1))
+		if err = tree.Set(enc8(10*i), enc8(10*i+1)); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	var eq bool
@@ -766,7 +776,9 @@ func TestbTreePrev(t *testing.T) {
 
 	// Fill
 	for i := int64(1); i <= N; i++ {
-		tree.Set(enc8(10*i), enc8(10*i+1))
+		if err = tree.Set(enc8(10*i), enc8(10*i+1)); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	var eq bool
@@ -974,18 +986,18 @@ func TestBTreeCollatingBug(t *testing.T) {
 		t.Fatal(g, e)
 	}
 
-	err = tree.Set(date, nil)
-	if err != nil {
+	if err = tree.Set(date, nil); err != nil {
 		t.Fatal(err)
 	}
 
-	err = tree.Set(customer, nil)
-	if err != nil {
+	if err = tree.Set(customer, nil); err != nil {
 		t.Fatal(err)
 	}
 
 	var b bytes.Buffer
-	tree.Dump(&b)
+	if err = tree.Dump(&b); err != nil {
+		t.Fatal(err)
+	}
 	t.Logf("\n%s", b.String())
 
 	key, _, err := tree.First()
@@ -1001,9 +1013,9 @@ func TestBTreeCollatingBug(t *testing.T) {
 
 func TestExtract(t *testing.T) { // Test of the exported wrapper only, .extract tested elsewhere
 	bt := NewBTree(nil)
-	bt.Set([]byte("a"), []byte("b"))
-	bt.Set([]byte("c"), []byte("d"))
-	bt.Set([]byte("e"), []byte("f"))
+	_ = bt.Set([]byte("a"), []byte("b"))
+	_ = bt.Set([]byte("c"), []byte("d"))
+	_ = bt.Set([]byte("e"), []byte("f"))
 
 	if v, err := bt.Get(nil, []byte("a")); string(v) != "b" || err != nil {
 		t.Fatal(v, err)
@@ -1041,8 +1053,8 @@ func TestFirst(t *testing.T) {
 		t.Fatal(k, v, err)
 	}
 
-	bt.Set([]byte("a"), []byte("b"))
-	bt.Set([]byte("c"), []byte("d"))
+	_ = bt.Set([]byte("a"), []byte("b"))
+	_ = bt.Set([]byte("c"), []byte("d"))
 
 	if k, v, err := bt.First(); string(k) != "a" || string(v) != "b" || err != nil {
 		t.Fatal(k, v, err)
@@ -1072,8 +1084,8 @@ func TestLast(t *testing.T) {
 		t.Fatal(k, v, err)
 	}
 
-	bt.Set([]byte("a"), []byte("b"))
-	bt.Set([]byte("c"), []byte("d"))
+	_ = bt.Set([]byte("a"), []byte("b"))
+	_ = bt.Set([]byte("c"), []byte("d"))
 
 	if k, v, err := bt.Last(); string(k) != "c" || string(v) != "d" || err != nil {
 		t.Fatal(k, v, err)
@@ -1104,7 +1116,7 @@ func TestseekFirst(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bt.Set([]byte("c"), []byte("d"))
+	_ = bt.Set([]byte("c"), []byte("d"))
 	enum, err = bt.seekFirst()
 	if err != nil {
 		t.Fatal(err)
@@ -1129,7 +1141,7 @@ func TestseekFirst(t *testing.T) {
 		t.Fatal(k, v)
 	}
 
-	bt.Set([]byte("a"), []byte("b"))
+	_ = bt.Set([]byte("a"), []byte("b"))
 	enum, err = bt.seekFirst()
 	if err != nil {
 		t.Fatal(err)
@@ -1172,7 +1184,7 @@ func TestseekLast(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bt.Set([]byte("a"), []byte("b"))
+	_ = bt.Set([]byte("a"), []byte("b"))
 	enum, err = bt.seekFirst()
 	if err != nil {
 		t.Fatal(err)
@@ -1197,7 +1209,7 @@ func TestseekLast(t *testing.T) {
 		t.Fatal(k, v)
 	}
 
-	bt.Set([]byte("c"), []byte("d"))
+	_ = bt.Set([]byte("c"), []byte("d"))
 	enum, err = bt.seekLast()
 	if err != nil {
 		t.Fatal(err)
@@ -1275,7 +1287,7 @@ func benchmarkBTreeSetFiler(b *testing.B, f Filer, sz int) {
 
 	tr, _, err := CreateBTree(a, nil)
 	if err != nil {
-		f.EndUpdate()
+		_ = f.EndUpdate()
 		b.Error(err)
 		return
 	}
@@ -1299,7 +1311,7 @@ func benchmarkBTreeSetFiler(b *testing.B, f Filer, sz int) {
 		}
 
 		if err := tr.Set(k[:], v); err != nil {
-			f.EndUpdate()
+			_ = f.EndUpdate()
 			b.Error(err)
 			return
 		}
