@@ -706,7 +706,6 @@ func BenchmarkMemFilerWrRand(b *testing.B) {
 	b.StopTimer()
 	rng := rand.New(rand.NewSource(42))
 	f := newMemFiler()
-	var bytes int64
 
 	var ofs, runs []int
 	for i := 0; i < b.N; i++ {
@@ -722,7 +721,6 @@ func BenchmarkMemFilerWrRand(b *testing.B) {
 	b.StartTimer()
 	for i, v := range ofs {
 		n := runs[i]
-		bytes += int64(n)
 		f.WriteAt(data[:n], int64(v))
 	}
 	b.StopTimer()
@@ -732,7 +730,6 @@ func BenchmarkMemFilerRdRand(b *testing.B) {
 	b.StopTimer()
 	rng := rand.New(rand.NewSource(42))
 	f := newMemFiler()
-	var bytes int64
 
 	var ofs, runs []int
 	for i := 0; i < b.N; i++ {
@@ -746,7 +743,6 @@ func BenchmarkMemFilerRdRand(b *testing.B) {
 
 	for i, v := range ofs {
 		n := runs[i]
-		bytes += int64(n)
 		f.WriteAt(data[:n], int64(v))
 	}
 

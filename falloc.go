@@ -1147,7 +1147,7 @@ func (a *Allocator) makeUsedBlock(dst []byte, b []byte) (w []byte, rqAtoms int, 
 
 		n2 := len(dst)
 		if rqAtoms2 := n2atoms(n2); rqAtoms2 < rqAtoms { // compression saved at least a single atom
-			w, n, rqAtoms, cc = dst, n2, rqAtoms2, tagCompressed
+			w, rqAtoms, cc = dst, rqAtoms2, tagCompressed
 		}
 	}
 	return
