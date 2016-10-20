@@ -342,7 +342,6 @@ type RollbackFiler struct {
 	checkpoint   func(int64) error
 	closed       bool
 	f            Filer
-	parent       Filer
 	tlevel       int // transaction nesting level, 0 == not in transaction
 	writerAt     io.WriterAt
 
