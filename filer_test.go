@@ -702,6 +702,8 @@ func BenchmarkMemFilerRdSeq(b *testing.B) {
 	}
 }
 
+const pgSize = 1 << 16
+
 func BenchmarkMemFilerWrRand(b *testing.B) {
 	b.StopTimer()
 	rng := rand.New(rand.NewSource(42))
