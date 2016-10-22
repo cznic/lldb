@@ -1037,7 +1037,7 @@ func (p btreeIndexPage) underflow(a btreeStore, root, iroot, parent int64, ph *i
 			return nil, err
 		}
 
-		if lc := btreeIndexPage(left).len(); lc > kIndex {
+		if lc := left.len(); lc > kIndex {
 			ppp := buffer.Get(maxBuf)
 			defer buffer.Put(ppp)
 			pp := *ppp
@@ -1049,10 +1049,10 @@ func (p btreeIndexPage) underflow(a btreeStore, root, iroot, parent int64, ph *i
 			p = p.setLen(pc + 1)
 			di, si, sz := 1+1*14, 1+0*14, (2*pc+1)*7
 			copy(p[di:di+sz], p[si:])
-			p.setChild(0, btreeIndexPage(left).child(lc))
+			p.setChild(0, left.child(lc))
 			p.setDataPage(0, btreeIndexPage(pp).dataPage(parentIndex-1))
 			*index++
-			btreeIndexPage(pp).setDataPage(parentIndex-1, btreeIndexPage(left).dataPage(lc-1))
+			btreeIndexPage(pp).setDataPage(parentIndex-1, left.dataPage(lc-1))
 			left = left.setLen(lc - 1)
 			if err = a.Realloc(parent, pp); err != nil {
 				return nil, err
@@ -1866,7 +1866,7 @@ func (root btree) String(a btreeStore) string {
 		}
 	}
 
-	f(int64(iroot), "")
+	f(iroot, "")
 	return strings.Join(s, "\n")
 }
 

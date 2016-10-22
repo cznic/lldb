@@ -1206,7 +1206,7 @@ func (a *Allocator) verifyUnused(h, totalAtoms int64, tag byte, log func(error) 
 		}
 
 		if atoms < 2 {
-			err = &ErrILSEQ{Type: ErrLongFreeBlkTooShort, Off: off, Arg: int64(atoms)}
+			err = &ErrILSEQ{Type: ErrLongFreeBlkTooShort, Off: off, Arg: atoms}
 			break
 		}
 
