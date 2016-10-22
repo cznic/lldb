@@ -199,12 +199,12 @@ func TestRollbackFiler3(t *testing.T) {
 	rng := rand.New(rand.NewSource(42))
 
 	buf := rndBytes(rng, 100)
-	if n, err := r.WriteAt(buf, 1e6); n != 100 || err != nil {
+	if n, err = r.WriteAt(buf, 1e6); n != 100 || err != nil {
 		t.Fatal(err)
 	}
 
 	buf = make([]byte, 100)
-	if n, err := r.ReadAt(buf, 1e6-200); n != 100 || err != nil {
+	if n, err = r.ReadAt(buf, 1e6-200); n != 100 || err != nil {
 		t.Fatal(err)
 	}
 
@@ -214,7 +214,7 @@ func TestRollbackFiler3(t *testing.T) {
 		}
 	}
 
-	if err := r.Truncate(1e5); err != nil {
+	if err = r.Truncate(1e5); err != nil {
 		t.Fatal(err)
 	}
 
@@ -222,11 +222,11 @@ func TestRollbackFiler3(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if n, err := r.ReadAt(buf, 1e6); n != 0 || err == nil {
+	if n, err = r.ReadAt(buf, 1e6); n != 0 || err == nil {
 		t.Fatal(n, err)
 	}
 
-	if err := r.Truncate(2e6); err != nil {
+	if err = r.Truncate(2e6); err != nil {
 		t.Fatal(err)
 	}
 
@@ -234,7 +234,7 @@ func TestRollbackFiler3(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if n, err := r.ReadAt(buf, 1e6); n == 0 || err != nil {
+	if n, err = r.ReadAt(buf, 1e6); n == 0 || err != nil {
 		t.Fatal(n, err)
 	}
 
@@ -285,7 +285,7 @@ func TestRollbackFiler4(t *testing.T) {
 
 		out = make([]byte, len(in), 2*maxSize)
 		copy(out, in)
-		if err := r.BeginUpdate(); err != nil {
+		if err = r.BeginUpdate(); err != nil {
 			t.Fatal(err)
 		}
 
@@ -296,16 +296,17 @@ func TestRollbackFiler4(t *testing.T) {
 			for i := range b {
 				b[i] = byte(rng.Int())
 			}
-			if n, err := r.WriteAt(b, int64(changeOff)); n != len(b) || err != nil {
+			var n int
+			if n, err = r.WriteAt(b, int64(changeOff)); n != len(b) || err != nil {
 				t.Fatal(n, len(b), err)
 			}
 		}
 
-		if err := r.Rollback(); err != nil {
+		if err = r.Rollback(); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := r.BeginUpdate(); err != nil {
+		if err = r.BeginUpdate(); err != nil {
 			t.Fatal(err)
 		}
 
@@ -316,7 +317,8 @@ func TestRollbackFiler4(t *testing.T) {
 			for i := range b {
 				b[i] = byte(rng.Int())
 			}
-			if n, err := r.WriteAt(b, int64(changeOff)); n != len(b) || err != nil {
+			var n int
+			if n, err = r.WriteAt(b, int64(changeOff)); n != len(b) || err != nil {
 				t.Fatal(n, len(b), err)
 			}
 			copy(out[changeOff:], b)
@@ -325,7 +327,7 @@ func TestRollbackFiler4(t *testing.T) {
 
 		newSize := rng.Intn(maxSize*3/2) + 4
 		if nest == maxNest {
-			if err := r.EndUpdate(); err != nil {
+			if err = r.EndUpdate(); err != nil {
 				t.Fatal(err)
 			}
 
@@ -333,7 +335,7 @@ func TestRollbackFiler4(t *testing.T) {
 		}
 
 		outSize, out = fn(nest+1, newSize, out)
-		if err := r.EndUpdate(); err != nil {
+		if err = r.EndUpdate(); err != nil {
 			t.Fatal(err)
 		}
 
