@@ -444,7 +444,7 @@ func BenchmarkBTreeGet32(b *testing.B) {
 	benchmarkBTreeGet(b, v)
 }
 
-func TestbTreeSeek(t *testing.T) {
+func TestBTreeSeek(t *testing.T) {
 	N := int64(*testN)
 
 	tree := NewBTree(nil)
@@ -636,7 +636,7 @@ func dec8(b []byte) (int64, error) {
 	return b2h(b), nil
 }
 
-func TestbTreeNext(t *testing.T) {
+func TestBTreeNext(t *testing.T) {
 	N := int64(*testN)
 
 	tree := NewBTree(nil)
@@ -753,7 +753,7 @@ func TestbTreeNext(t *testing.T) {
 	}
 }
 
-func TestbTreePrev(t *testing.T) {
+func TestBTreePrev(t *testing.T) {
 	N := int64(*testN)
 
 	tree := NewBTree(nil)
@@ -1108,7 +1108,7 @@ func TestLast(t *testing.T) {
 	}
 }
 
-func TestseekFirst(t *testing.T) {
+func TestSeekFirst(t *testing.T) {
 	bt := NewBTree(nil)
 
 	enum, err := bt.seekFirst()
@@ -1176,7 +1176,7 @@ func TestseekFirst(t *testing.T) {
 	}
 }
 
-func TestseekLast(t *testing.T) {
+func TestSeekLast(t *testing.T) {
 	bt := NewBTree(nil)
 
 	enum, err := bt.seekFirst()
