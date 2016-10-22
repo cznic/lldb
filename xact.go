@@ -340,7 +340,6 @@ type RollbackFiler struct {
 	bitFiler     *bitFiler
 	checkpoint   func(int64) error
 	f            Filer
-	parent       Filer
 	writerAt     io.WriterAt
 
 	// afterRollback, if not nil, is called after performing Rollback
