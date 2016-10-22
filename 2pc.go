@@ -148,15 +148,16 @@ func NewACIDFiler(db Filer, wal *os.File) (r *ACIDFiler0, err error) {
 				return
 			}
 
-			wfi, err := r.wal.Stat()
-			if err == nil {
-				r.peakWal = mathutil.MaxInt64(wfi.Size(), r.peakWal)
+			var wfi os.FileInfo
+			if wfi, err = r.wal.Stat(); err != nil {
+				return
 			}
+			r.peakWal = mathutil.MaxInt64(wfi.Size(), r.peakWal)
 
 			// Phase 1 commit complete
 
 			for _, v := range r.data {
-				if _, err := db.WriteAt(v.b, v.off); err != nil {
+				if _, err = db.WriteAt(v.b, v.off); err != nil {
 					return err
 				}
 			}
@@ -279,7 +280,8 @@ func (a *ACIDFiler0) recoverDb(db Filer) (err error) {
 			}
 
 			for {
-				k, v, err := enum.current()
+				var k, v []byte
+				k, v, err = enum.current()
 				if err != nil {
 					if fileutil.IsEOF(err) {
 						break

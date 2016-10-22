@@ -704,7 +704,7 @@ reloc:
 		atoms := n2atoms(dlen)
 		switch atoms {
 		case 1:
-			switch tag := first[15]; tag {
+			switch tag = first[15]; tag {
 			default:
 				return nil, &ErrILSEQ{Type: ErrTailTag, Off: off, Arg: int64(tag)}
 			case tagNotCompressed:
@@ -725,7 +725,7 @@ reloc:
 				return
 			}
 
-			switch tag := cc[0]; tag {
+			switch tag = cc[0]; tag {
 			default:
 				return nil, &ErrILSEQ{Type: ErrTailTag, Off: off, Arg: int64(tag)}
 			case tagNotCompressed:
@@ -760,7 +760,7 @@ reloc:
 			return
 		}
 
-		switch tag := cc[0]; tag {
+		switch tag = cc[0]; tag {
 		default:
 			return nil, &ErrILSEQ{Type: ErrTailTag, Off: off, Arg: int64(tag)}
 		case tagNotCompressed:
@@ -866,8 +866,8 @@ retry:
 		}
 
 		fh, fa := handle+needAtoms, atoms-needAtoms
-		sz, err := a.f.Size()
-		if err != nil {
+		var sz int64
+		if sz, err = a.f.Size(); err != nil {
 			return err
 		}
 
