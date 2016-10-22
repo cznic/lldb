@@ -96,13 +96,13 @@ const (
 //  [1]: http://godoc.org/github.com/cznic/exp/dbm
 type ACIDFiler0 struct {
 	*RollbackFiler
+	wal               *os.File
 	bwal              *bufio.Writer
 	data              []acidWrite
-	newEpoch          bool
-	peakBitFilerPages int   // track maximum transaction memory
 	peakWal           int64 // tracks WAL maximum used size
+	peakBitFilerPages int   // track maximum transaction memory
 	testHook          bool  // keeps WAL untruncated (once)
-	wal               *os.File
+	newEpoch          bool
 }
 
 // NewACIDFiler0 returns a  newly created ACIDFiler0 with WAL in wal.
