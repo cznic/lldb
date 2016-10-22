@@ -338,7 +338,7 @@ func NewAllocator(f Filer, opts *Options) (a *Allocator, err error) {
 		}
 
 		if _, err = f.WriteAt(b[:], 0); err != nil {
-			a.f.Rollback()
+			_ = a.f.Rollback()
 			return
 		}
 

@@ -42,7 +42,9 @@ func (f *truncFiler) Size() (int64, error)                    { return f.fake.Si
 func (f *truncFiler) Sync() error                             { return f.f.Sync() }
 
 func (f *truncFiler) Truncate(sz int64) error {
-	f.fake.Truncate(sz)
+	if err := f.fake.Truncate(sz); err != nil {
+		return err
+	}
 	return f.f.Truncate(sz)
 }
 

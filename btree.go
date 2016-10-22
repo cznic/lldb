@@ -2325,8 +2325,9 @@ func (root btree) clear2(a btreeStore, ph int64) (err error) {
 	case true:
 		ip := btreeIndexPage(p)
 		for i := 0; i <= ip.len(); i++ {
-			root.clear2(a, ip.child(i))
-
+			if err = root.clear2(a, ip.child(i)); err != nil {
+				return err
+			}
 		}
 	case false:
 		dp := btreeDataPage(p)
