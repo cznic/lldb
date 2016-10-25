@@ -178,7 +178,7 @@ func dump(a *pAllocator, t *testing.T) {
 		return
 	}
 
-	t.Logf("%d(%#x) writen to %q", sz, sz, fn)
+	t.Logf("%d(%#x) written to %q", sz, sz, fn)
 
 	fn = "bad-dump"
 	g, err := os.Create(fn)
@@ -193,7 +193,7 @@ func dump(a *pAllocator, t *testing.T) {
 		return
 	}
 
-	t.Logf("%d(%#x) writen to %q", sz, sz, fn)
+	t.Logf("%d(%#x) written to %q", sz, sz, fn)
 
 	t.Log("Last known good FLT")
 	for _, slot := range a.lastKnownGoodFLT {

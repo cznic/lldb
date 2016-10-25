@@ -5,15 +5,21 @@
 package lldb
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"testing"
 	"time"
+
+	"github.com/cznic/strutil"
 )
 
 const (
@@ -77,4 +83,62 @@ func temp() (dir, name string) {
 	}
 
 	return dir, filepath.Join(dir, "test.tmp")
+}
+
+func testIssue12(t *testing.T, keys []int, compress bool) {
+	dir, fn := temp()
+	defer os.RemoveAll(dir)
+
+	f, err := os.Create(fn)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer f.Close()
+
+	fil := NewSimpleFileFiler(f)
+	a, err := NewAllocator(fil, &Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	a.Compress = compress
+	t.Logf("Using compression (recommended): %v", compress)
+	btree, _, err := CreateBTree(a, bytes.Compare)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t0 := time.Now()
+	for _, i := range keys {
+		k := make([]byte, 4)
+		binary.BigEndian.PutUint32(k, uint32(i))
+		if err = btree.Set(k, nil); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	d := time.Since(t0)
+	t.Logf("%d keys in %s, %f keys/s, %v s/key", len(keys), d, float64(len(keys))/d.Seconds(), d/time.Duration(len(keys)))
+
+	sz, err := fil.Size()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("File size: %d, %f bytes/key", sz, float64(sz)/float64(len(keys)))
+
+	var stats AllocStats
+	if err := a.Verify(NewMemFiler(), nil, &stats); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("\n%s", strutil.PrettyString(stats, "", "", nil))
+}
+
+func TestIssue12(t *testing.T) {
+	fmt.Fprintf(os.Stderr, "TestIssue12: Warning, run with -timeout at least 1h\n")
+	keys := rand.Perm(1 << 20)
+	testIssue12(t, keys, false)
+	testIssue12(t, keys, true)
 }

@@ -1,3 +1,7 @@
+# Copyright 2014 The lldb Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
 .PHONY:	all clean cover cpu editor internalError later mem nuke todo edit
 
 grep=--include=*.go --include=*.l --include=*.y --include=*.yy
@@ -10,6 +14,9 @@ all: editor
 	unused . || true
 	misspell *.go
 	gosimple || true
+	codesweep || true
+	unconvert || true
+	maligned || true
 
 clean:
 	go clean
@@ -23,11 +30,11 @@ cpu: clean
 	go tool pprof -lines *.test cpu.out
 
 edit:
-	@2>/dev/null gvim -p Makefile *.go
+	@ 1>/dev/null 2>/dev/null gvim -p Makefile *.go
 
 editor:
 	gofmt -l -s -w *.go
-	go test 2>&1 | tee log
+	go test
 	go build
 
 internalError:
@@ -45,7 +52,7 @@ nuke: clean
 	go clean -i
 
 todo:
-	@grep -nr $(grep) ^[[:space:]]*_[[:space:]]*=[[:space:]][[:alpha:]][[:alnum:]]* * || true
-	@grep -nr $(grep) TODO * || true
-	@grep -nr $(grep) BUG * || true
-	@grep -nr $(grep) [^[:alpha:]]println * || true
+	@grep -nr $(grep) ^[[:space:]]*_[[:space:]]*=[[:space:]][[:alpha:]][[:alnum:]]* * | grep -v $(ngrep) || true
+	@grep -nr $(grep) TODO * | grep -v $(ngrep) || true
+	@grep -nr $(grep) BUG * | grep -v $(ngrep) || true
+	@grep -nr $(grep) [^[:alpha:]]println * | grep -v $(ngrep) || true

@@ -27,7 +27,7 @@ import (
 
 var (
 	testFrom = flag.Uint("from", 0, "test I [-from, -N)")
-	noGrow   = flag.Bool("noGrow", false, "check only embeded keys/values")
+	noGrow   = flag.Bool("noGrow", false, "check only embedded keys/values")
 )
 
 func verifyPageLinks(a btreeStore, tree btree, n int) (err error) {

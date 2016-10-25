@@ -98,10 +98,10 @@ type ACIDFiler0 struct {
 	*RollbackFiler
 	bwal     *bufio.Writer
 	data     []acidWrite
-	newEpoch bool
 	peakWal  int64 // tracks WAL maximum used size
-	testHook bool  // keeps WAL untruncated (once)
 	wal      *os.File
+	testHook bool  // keeps WAL untruncated (once)
+	newEpoch bool
 }
 
 // NewACIDFiler0 returns a  newly created ACIDFiler0 with WAL in wal.
@@ -110,7 +110,7 @@ type ACIDFiler0 struct {
 // granted and no recovery procedure is taken.
 //
 // If the WAL is of non zero size then it is checked for having a
-// commited/fully finished transaction not yet been reflected in db. If such
+// committed/fully finished transaction not yet been reflected in db. If such
 // transaction exists it's committed to db. If the recovery process finishes
 // successfully, the WAL is truncated to zero size and fsync'ed prior to return
 // from NewACIDFiler0.
