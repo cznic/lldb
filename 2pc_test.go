@@ -95,8 +95,11 @@ func TestACID0MemBTreeCaps(t *testing.T) {
 	}
 }
 
-func TestACIDFiler0(t *testing.T) {
+func testACIDFiler0(t *testing.T, num, denom int64) {
 	const SZ = 1 << 17
+
+	headroom := SZ * num / denom
+	t.Logf("Headroom %v", headroom)
 
 	// Phase 1: Create a DB, fill with it with data.
 
@@ -121,7 +124,7 @@ func TestACIDFiler0(t *testing.T) {
 
 	realFiler := NewSimpleFileFiler(db)
 	truncFiler := NewTruncFiler(realFiler, -1)
-	acidFiler, err := NewACIDFiler(truncFiler, wal)
+	acidFiler, err := NewACIDFiler(truncFiler, wal, MinWAL(headroom))
 	if err != nil {
 		t.Error(err)
 		return
@@ -296,4 +299,10 @@ func TestACIDFiler0(t *testing.T) {
 		t.Error(err)
 		return
 	}
+}
+
+func TestACIDFiler0(t *testing.T) {
+	testACIDFiler0(t, 0, 1)
+	testACIDFiler0(t, 1, 2)
+	testACIDFiler0(t, 2, 1)
 }
