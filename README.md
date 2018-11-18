@@ -1,8 +1,5 @@
-lldb
-====
+`github.com/cznic/lldb` has moved to [`modernc.org/lldb`](https://godoc.org/modernc.org/lldb) ([vcs](https://gitlab.com/cznic/lldb)).
 
-Package lldb implements a low level database engine.
+Please update your import paths to `modernc.org/lldb`.
 
-Installation: $ go get github.com/cznic/lldb
-
-Documentation: [godoc.org/github.com/cznic/lldb](http://godoc.org/github.com/cznic/lldb)
+This repo is now archived.
